@@ -1,0 +1,7 @@
+---
+- hosts: all
+  become: true
+- include: usercreate.yml
+  when: state=present
+- include: userdelete.yml
+  when: state=absent

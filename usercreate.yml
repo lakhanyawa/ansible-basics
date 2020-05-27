@@ -1,0 +1,15 @@
+---
+
+#- name: Check If lakhan User is Present
+#  user:
+#    name: lakhan
+#    shell: /bin/bash
+#    append: yes
+
+- name: Set up multiple authorized keys
+  authorized_key:
+    user: lakhan
+    state: present
+    key: '{{ item }}'
+  with_file:
+     - lakhan

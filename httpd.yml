@@ -1,0 +1,8 @@
+---
+- hosts: "{{ target_hosts }}"
+  become: true
+  tasks:
+   - name: remove the Apache package
+     yum:
+        name: httpd
+        state: absent

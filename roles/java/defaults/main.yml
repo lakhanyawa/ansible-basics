@@ -1,0 +1,5 @@
+---
+# defaults file for java
+java_download_dir: '/opt/java8'
+java_version: "1.8.0_211"
+java_artifactory_url: "s3://daas-build/packages/java8"

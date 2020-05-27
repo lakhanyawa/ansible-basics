@@ -1,0 +1,79 @@
+---
+- name: Checking installed version of java
+  shell: /usr/bin/test "$(java -version 2> /dev/stdout | head -n 1 | grep -oP '[0-9_.]+')" = {{ java_version }}
+  register: version_installed
+  ignore_errors: True
+  tags: [version_check]
+
+- debug:
+    msg: "{{ version_installed }}"
+
+- name: Install Java with specified version
+  block:
+   - name: Install | Create download directory
+     file:
+       state: directory
+       mode: 'u=rwx,go=rx'
+       dest: '{{ java_download_dir }}'
+     when: version_installed.rc == 1
+
+   - debug:
+       msg: "{{ java_version_list[java_version] }}"
+
+   - name: Install | download java package from s3
+     shell: aws s3 --region ap-south-1 cp {{ java_artifactory_url }}/{{ java_version_list[java_version] }} . chdir={{ java_download_dir }} creates={{ java_download_dir }}/java_downloaded_true
+#     shell: aws s3 --region ap-south-1 cp {{ java_artifactory_url }}/{{ java_version_list[java_version] }} {{ java_download_dir }} creates={{ java_download_dir }}/java_downloaded_true
+
+   - name: download success file creation
+     file: path={{ java_download_dir }}/java_downloaded_true state=touch
+
+   - name: Extract java
+     command: tar --strip-components 1 -xf {{ java_version_list[java_version]  }} chdir={{ java_download_dir }} creates={{ java_download_dir }}/bin/java
+
+   - name: create default-java dir for es to detect
+     file:
+       state: directory
+       mode: 'u=rwx,go=rx'
+       dest: "{{ item }}"
+       recurse: yes
+     with_items:
+       - /usr/lib/java
+       - /usr/lib/jvm
+
+   - file:
+       src: "{{ item.src }}"
+       dest: "{{ item.dest }}"
+       owner: root
+       group: root
+       state: link
+     with_items:
+       - { src: '{{ java_download_dir }}/bin/java', dest: '/usr/bin/java' }
+       - { src: '{{ java_download_dir }}/bin/javac', dest: '/usr/bin/javac' }
+       - { src: '{{ java_download_dir }}/bin/jar', dest: '/usr/bin/jar' }
+       - { src: '{{ java_download_dir }}', dest: '/usr/lib/jvm/default-java' }
+
+   - name: ensure java_home is part of /etc/profile
+     lineinfile:
+       path: /etc/profile
+       regexp: "{{ item.regexp }}"
+       line: "{{ item.line }}"
+     with_items:
+       - {regexp: '^export JAVA_HOME', line: 'export JAVA_HOME={{ java_download_dir }}'}
+       - {regexp: '^export JRE_HOME', line: 'export JRE_HOME={{ java_download_dir }}/jre'}
+       - {regexp: '^export PATH=', line: 'export PATH=$PATH:{{ java_download_dir }}/bin:{{ java_download_dir }}/jre/bin'}
+
+   - name: add java to path
+     lineinfile:
+        dest=/etc/environment
+        state=present
+        backrefs=yes
+        regexp='PATH=(["]*)((?!.*?{{ java_download_dir }}/bin:{{ java_download_dir }}/jre/bin).*?)(["]*)$'
+        line="PATH=\1\2:{{ java_download_dir }}/bin:{{ java_download_dir }}/jre/bin\3"
+
+  when: version_installed is failed
+
+
+#- debug:
+#    msg: "{{ java_version.split('_') }}"
+#    msg: "{{ java_version_list[java_version] }}"
+    

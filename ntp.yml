@@ -1,0 +1,9 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: install ntp server on remote server
+      yum: name=ntp state=present
+      
+    - name: start ntp service
+      service: name=ntpd state=started

@@ -1,0 +1,21 @@
+filebeat.prospectors:
+- type: log
+  enabled: true
+  paths:
+    - /tmp/default.log
+  fields:
+    service: dml-default
+  metadata:
+    - beat
+  scan_frequency: 5s
+filebeat.config.modules:
+  # Glob pattern for configuration loading
+  path: ${path.config}/modules.d/*.yml
+
+  # Set to true to enable config reloading
+  reload.enabled: false
+  ### Logstash as output
+output:
+  logstash:
+    # The Logstash hosts
+    hosts: ["172.21.113.86:5044"]

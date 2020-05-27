@@ -1,0 +1,25 @@
+---
+
+- name: Check If {{ item.username }} User is Present
+  user:
+    name: "{{ item.username }}"
+    shell: /bin/bash
+  with_items: "{{ users }}"
+
+
+- name: Set up Authorized keys
+  authorized_key:
+    user: "{{ item.username }}"
+    key: '{{ item.key }}'
+    state: "{{ item.state }}"
+  with_items: "{{ users }}"
+
+- name: Sudoers | Update sudoers file and validate
+  lineinfile:
+    path: /etc/sudoers.d/{{ item.username }}
+    create: yes
+    regexp: '^%{{ item.username }}'
+    line: '%{{ item.username }}  ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+    state: "{{ item.sudoers }}"
+  with_items: "{{ users }}"

@@ -1,0 +1,11 @@
+---
+
+- name: Copy Filebeat configuration.
+  copy:
+    src: files/filebeat-default.yml
+    dest: "/etc/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart filebeat
+

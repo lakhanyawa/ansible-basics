@@ -1,0 +1,5 @@
+---
+# vars file for java
+
+java_version_list: 
+     "1.8.0_211": "jdk-8u211-linux-x64.tar.gz"
