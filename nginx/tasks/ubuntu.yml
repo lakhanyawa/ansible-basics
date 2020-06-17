@@ -1,0 +1,185 @@
+---
+- name: nginx | Create directories
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    state: directory
+    mode: 0755
+  with_items:
+    - /etc/nginx/sites-enabled
+    - /etc/nginx/sites-available
+    - /etc/nginx/conf.d
+    - /var/lib/nginx
+  tags:
+    - nginx
+
+- name: nginx | Install dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - libreadline-dev
+    - libncurses5-dev
+    - libpcre3-dev
+    - libssl-dev
+    - libxslt1-dbg
+    - libxslt1-dev
+    - libgeoip-dev
+    - libgd-dev
+    - perl
+    - make
+    - apache2-utils
+  tags:
+    - nginx  
+
+
+# - name: nginx | Unarchive nginx
+#   unarchive:
+#     src: http://openresty.org/download/{{ nginx_version }}.tar.gz
+#     dest: /opt/
+#     remote_src: yes
+#     creates: /opt/{{ nginx_version }}/COPYRIGHT
+
+- name: nginx | download nginx
+  get_url:
+    url: http://openresty.org/download/{{ nginx_version }}.tar.gz
+    dest: /opt/
+  tags:
+    - extractnginx
+    - nginx
+
+- name: nginx | Unarchive nginx
+  shell: |
+    tar xvzf {{ nginx_version }}.tar.gz
+  args:
+    chdir: /opt/
+    creates: /opt/{{ nginx_version }}/COPYRIGHT
+  tags:
+    - extractnginx
+    - nginx  
+
+- name: nginx | Configure openresty nginx
+  shell: |
+    ./configure \
+    --with-cc-opt='-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -D_FORTIFY_SOURCE=2' \
+    --with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro' \
+    --prefix=/usr/share/nginx \
+    --conf-path=/etc/nginx/nginx.conf \
+    --http-log-path=/var/log/nginx/access.log \
+    --error-log-path=/var/log/nginx/error.log \
+    --lock-path=/var/lock/nginx.lock \
+    --pid-path=/run/nginx.pid \
+    --http-client-body-temp-path=/var/lib/nginx/body \
+    --http-fastcgi-temp-path=/var/lib/nginx/fastcgi \
+    --http-proxy-temp-path=/var/lib/nginx/proxy \
+    --http-scgi-temp-path=/var/lib/nginx/scgi \
+    --http-uwsgi-temp-path=/var/lib/nginx/uwsgi \
+    --with-debug \
+    --with-pcre-jit \
+    --with-http_ssl_module \
+    --with-http_stub_status_module \
+    --with-http_realip_module \
+    --with-http_addition_module \
+    --with-http_dav_module \
+    --with-http_geoip_module \
+    --with-http_gzip_static_module \
+    --with-http_image_filter_module \
+    --with-http_sub_module \
+    --with-http_xslt_module \
+    --with-http_v2_module
+  args:
+    chdir: /opt/{{ nginx_version }}/
+    creates: /opt/{{ nginx_version }}/Makefile
+  register: nginxconfigure
+  tags:
+    - configure
+    - nginx
+
+- name: Make install openresty nginx
+  make:
+    chdir: /opt/{{ nginx_version }}/
+    target: install
+  notify: restart nginx
+  when: nginxconfigure.changed
+  tags:
+    - nginx
+
+- name: Make link for nginx executable
+  file:
+    src: /usr/share/nginx/nginx/sbin/nginx
+    dest: /usr/sbin/nginx
+    state: link
+    force: yes
+  tags:
+    - nginx
+  
+
+- name: Copy nginx configuration
+  template: src=nginx.conf.j2 dest=/etc/nginx/nginx.conf
+  notify: reload nginx
+  tags: [nginx_config,nginx]
+
+- name: Copy server configuration
+  template: src={{ item }} dest=/etc/nginx/sites-available/
+  when: nginx2_flag is not defined
+  with_items:
+  - "{{ app_config[git_app_repo].server_hostname }}"
+  notify: reload nginx
+  tags: [nginx_config,nginx]
+
+- name: Copy nginx systemd script
+  template:
+    src: openrestysystemd.j2
+    dest: /etc/systemd/system/nginx.service
+  notify: reload nginx
+  tags:
+    - nginx_config
+    - nginx
+
+#Logrotate configurations for nginx
+- name: Copy nginx logrotate configuration file
+  template: src=nginx.logrotate.hourly.j2 dest=/etc/logrotate.d/nginx
+  tags: [nginx_config, logrotate,nginx]
+
+- name: Check File Exists
+  stat: path=/etc/cron.daily/logrotate
+  register: logrotate_stat
+  tags: [logrotate,nginx]
+
+- name: Move logrotate cron file from cron.daily to cron.hourly
+  command: mv /etc/cron.daily/logrotate /etc/cron.hourly/logrotate
+  when: logrotate_stat.stat.exists
+  tags: [logrotate,nginx]
+
+
+- name: Enable site
+  shell: ln -s /etc/nginx/sites-available/* /etc/nginx/sites-enabled/
+  ignore_errors: True
+  notify: reload nginx
+  tags: ['nginx_config',nginx]
+
+- name: Keep nginx service running
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
+  tags: ['nginx_config',nginx]
+
+- name: force systemd to reread configs
+  systemd:
+    name: nginx
+    daemon_reload: yes
+  # when: ansible_distribution == 'Ubuntu' and ansible_distribution_version == '16.04'
+  tags: ['nginx_config',nginx]
+
+
+# - name: Keep nginx service stopped
+#   systemd:
+#     name: nginx
+#     state: stopped
+#     enabled: no
+#     daemon_reload: yes
+#   tags:
+#     - nginx_config
+

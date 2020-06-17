@@ -1,0 +1,126 @@
+user www-data;
+worker_processes auto;
+pid /var/run/nginx.pid;
+worker_rlimit_nofile {{ worker_rlimit_nofile }};
+
+events {
+  worker_connections {{ worker_connections }};
+  multi_accept {{ multi_accept }};
+  use epoll;
+}
+http {
+  ##
+  # Basic Settings
+  ##
+
+  map $status $loggable {
+      ~^[23]  0;
+      default 1;
+  }
+  map $status $logger {
+      ~^[23]  0;
+      default 0;
+  }
+ map $request_method $allowed_verb {
+    GET 1;
+    POST 1;
+    HEAD 1;
+    DELETE 1;
+    OPTIONS 1;
+    PUT 1;
+    default 0;
+ }
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
+  keepalive_timeout {{ keepalive_timeout }};
+  keepalive_requests {{ keepalive_requests }};
+
+{% if nginx_buffer_v is defined %}
+  client_body_buffer_size 1M;
+{% endif %}
+
+  underscores_in_headers on;
+  #KR: nginx upstream timeout to 30 sec
+  proxy_read_timeout {{ proxy_read_timeout }};
+
+  types_hash_max_size 2048;
+  server_tokens off;
+
+   server_names_hash_bucket_size 128;
+  # server_name_in_redirect off;
+
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+
+  ##
+  # Logging Settings
+  ##
+
+  {% for item in headers %}
+more_set_headers '{{ item.header }} {{ item.value }}';
+  {% endfor %}
+
+  log_format  main '$remote_addr - $remote_user [$time_local] "$request" '
+                '$status $body_bytes_sent "$http_referer" '
+                '"$http_user_agent" "$upstream_response_time" "$upstream_addr" "$request_time" "$sent_http_app_err_code" '
+                '"$http_x_request_id" "$sent_http_x_user_id"';
+
+{% if gateways_service is defined %}
+  log_format  main_in '$remote_addr - $remote_user [$time_local] "$request" '
+                '$status $body_bytes_sent "$http_referer" '
+                '"$http_user_agent" "$upstream_response_time" "$upstream_addr"'; 
+{% endif %}
+
+  access_log /var/log/nginx/access.log;
+  error_log /var/log/nginx/error.log;
+
+  real_ip_header X-Forwarded-For;
+  set_real_ip_from 10.0.0.0/16;
+  set_real_ip_from 54.251.151.39/32;
+  real_ip_recursive on;
+
+  ##
+  # Gzip Settings
+  ##
+
+  gzip on;
+  gzip_disable "msie6";
+
+  gzip_vary on;
+  gzip_proxied any;
+
+  gzip_comp_level 4;
+  gzip_min_length 256;
+
+  gzip_buffers 16 8k;
+  gzip_http_version 1.1;
+  gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript;
+
+  ##
+  # nginx-naxsi config
+  ##
+  # Uncomment it if you installed nginx-naxsi
+  ##
+
+  #include /etc/nginx/naxsi_core.rules;
+
+  ##
+  # nginx-passenger config
+  ##
+  # Uncomment it if you installed nginx-passenger
+  ##
+ {% for item in segment %}
+{{ item }};
+  {% endfor %}
+ {% for item in passenger %}
+{{ item }};
+  {% endfor %}
+
+  ##
+  # Virtual Host Configs
+  ##
+
+  include /etc/nginx/conf.d/*.conf;
+  include /etc/nginx/sites-enabled/*;
+}
