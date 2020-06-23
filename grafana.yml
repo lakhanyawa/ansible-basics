@@ -1,0 +1,11 @@
+---
+- hosts: "{{ target_host }}"
+  become: true
+  roles:
+    - ansible-role-java 
+    - ansible-role-logstash
+    - ansible-role-kibana
+    - ansible-role-elasticsearch
+  #  - ansible-role-nginx 
+  #  - ansible-role-grafana 
+  #  - ansible-promethus
