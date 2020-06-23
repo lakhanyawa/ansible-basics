@@ -1,7 +1,7 @@
 ---
 
 # Logstash defaults vars
-logstash_major_version: 5.x
+logstash_major_version: 6.x
 logstash_port: 5044
 logstash_elasticsearch_host:
   - http://localhost:9200
