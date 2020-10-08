@@ -1,4 +1,4 @@
-def post = new URL("http://192.168.15.136:8080/job/jessi-pipeline/lastSuccessfulBuild/api/json?tree=actions[lastBuiltRevision[SHA1]]&depth=3").openConnection()
+def post = new URL("http://192.168.15.136:8080/job/PipelineAsPackage/lastSuccessfulBuild/api/json?tree=actions[lastBuiltRevision[SHA1]]&depth=3").openConnection()
 
 String user = "admin"
 String pass = "admin123"
