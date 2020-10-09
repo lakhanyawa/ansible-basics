@@ -1,0 +1,29 @@
+I want to curl an URL and capture the response into a variable.
+
+when I curl a command and echo its output I get the correct response as below
+
+sh 'output=`curl https://some-host/some-service/getApi?apikey=someKey`;echo $output;'
+I want to catch the same response into a variable and use that response for further operation
+
+Below is my Jenkinsfile
+
+pipeline {
+    agent any
+    stages {
+        stage('Build-Image') {
+            steps {
+                echo '..........................Building Image..........................'
+
+                //In below line I am getting Output
+                sh 'output=`curl  http://192.168.15.141:8080/job/jessi2-pipeline/lastSuccessfulBuild/api/json --user admin:admin123`;echo $output;'
+                sh 'commit_id=`echo $I | awk -F '"SHA1":"' '{print $2}' | awk -F '"' '{print $1}'`; echo $commit_id'
+
+                script {
+                    //I want to get the same response here
+                    //def response = sh 'curl https://some-host/some-service/getApi?apikey=someKey'
+                    echo '=========================Response===================' + response
+                }
+            }
+        }
+    }
+}
