@@ -12,7 +12,7 @@ pipeline {
                 commit_id=`echo $output | awk -F "SHA1" '{print $2}' | awk -F "," '{print $1}'| awk -F ":" '{print $2}' | sed 's/"//g'`
                 '''
                 script{
-                 env.commit = ${commit_id}
+                 env.commit = $commit_id
                 }
             }
         }
