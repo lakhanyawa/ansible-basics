@@ -8,18 +8,17 @@ pipeline{
       defaultValue: "",
       description: '',
       listSize: '10',
-      name: 'Version',
+      name: 'COMMIT_ID',
       quickFilterEnabled: false,
       selectedValue: 'NONE',
       sortMode: 'ASCENDING_SMART',
       tagFilter: "*",
-      type: 'PT_BRANCH_TAG',
+      type: 'master',
       useRepository: 'git@github.com/lakhanyawa/ansible-basics')
    }
    stages{
       stage ("echo Git Tag") {
         steps {
-          echo "${params.Version}"
           echo "${params.COMMIT_ID}"
         }
      }
