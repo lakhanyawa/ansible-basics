@@ -12,6 +12,7 @@ pipeline {
                 script {
                  myVar = readFile('commit.txt').trim()
                 }
+                  echo "${myVar}"
             }
         }
         
