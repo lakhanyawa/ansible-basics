@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    parameters {
+            string(name: 'commit', defaultValue: '')
+        }
+
     stages {
         stage('Build-Image') {
             steps {
@@ -11,8 +15,7 @@ pipeline {
                 commit_id=`echo $output | awk -F "SHA1" '{print $2}' | awk -F "," '{print $1}'| awk -F ":" '{print $2}' | sed 's/"//g'`
                 echo $commit_id 
                 '''
-                script {
-                   commit=$commit_id
+                   env.commit=commit_id
                 }
             }
         }
