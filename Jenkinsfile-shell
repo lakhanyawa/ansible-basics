@@ -17,10 +17,7 @@ pipeline {
         
         stage ("Deploy to Production"){
               steps {
-                  sh """
-                    set commit_new_id = ${env.commit}
-                    echo $commit_new_id
-                  """  
+                sh 'echo $commit_id'
                }
          }
     }
