@@ -1,19 +1,14 @@
-commit_id=""
+commit_id="lakhan"
 pipeline {
     agent any
-    parameters {
-            string(name: 'commit', defaultValue: '')
-        }
-
     stages {
         stage('Build-Image') {
             steps {
                 sh '''
                 output=`curl  http://192.168.15.141:8080/job/jessi2-pipeline/lastSuccessfulBuild/api/json --user admin:admin123`
                 commit_id=`echo $output | awk -F "SHA1" '{print $2}' | awk -F "," '{print $1}'| awk -F ":" '{print $2}' | sed 's/"//g'`
-                echo $commit_id > commit.txt
                 '''
-                echo $commit_id
+                echo ${commit_id}
             }
         }
         
