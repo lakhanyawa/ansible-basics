@@ -20,7 +20,7 @@ pipeline{
       stage ("echo Git Tag") {
         steps {
           echo "${params.Version}"
-          echo "${params.Commit_ID}"
+          echo "${params.COMMIT_ID}"
         }
      }
   } 
