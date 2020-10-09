@@ -12,6 +12,10 @@ pipeline {
                 echo $commit_id
                 '''
             }
+            post {
+                success {
+                    echo '$commit_id'
+            }
         }
     }
 }
