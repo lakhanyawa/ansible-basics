@@ -1,0 +1,15 @@
+import groovy.json.JsonSlurperClassic
+httpRequest url: 'http://192.168.15.140:8080/job/jessi2-pipeline/lastSuccessfulBuild/api/json', outputFile: 'output.json'
+
+def jsonFile = readFile(file: 'output.json')
+def data = new JsonSlurperClassic().parseText(jsonFile)
+latestBuildNumber = "${data.lastSuccessfulBuild.number}"
+pipeline {
+    agent any
+stages{
+        stage('Build'){
+            steps {
+                sh 'echo $latestBuildNumber'
+		}
+    }
+}
