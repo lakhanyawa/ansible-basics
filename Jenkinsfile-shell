@@ -4,7 +4,8 @@ pipeline {
     stages {
         stage('Build-Image') {
             steps {
-                sh '''
+             withCreadentils ([usernamePassword(credentials: 'admin', usernameVariable: USER, passwordVariable: PWD)]){
+	            sh '''
                 output=`curl  http://192.168.15.141:8080/job/jessi2-pipeline/lastSuccessfulBuild/api/json --user admin:admin123`
                 commit_id=`echo $output | awk -F "SHA1" '{print $2}' | awk -F "," '{print $1}'| awk -F ":" '{print $2}' | sed 's/"//g'`
                 echo $commit_id > commit.txt
@@ -12,6 +13,7 @@ pipeline {
                 script {
                  myVar = readFile('commit.txt').trim()
                 }
+               }
                   echo "${myVar}"
             }
         }
