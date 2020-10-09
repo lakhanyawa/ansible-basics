@@ -1,22 +1,3 @@
-def post = new URL("http://192.168.15.140:8080/job/jessi2-pipeline/lastSuccessfulBuild/api/json?tree=actions[lastBuiltRevision[SHA1]]&depth=3").openConnection()
-
-String user = "admin"
-String pass = "admin123"
-String authStr = user +":"+  pass
-String encoding = authStr.getBytes("utf-8").encodeBase64().toString()
-
-
-post.setRequestMethod("POST")
-post.setDoOutput(true)
-post.setRequestProperty("Authorization", "Basic " + encoding)
-def postRC = post.getResponseCode()
-if(postRC.equals(200)) {
-    def result = post.getInputStream().getText()
-    def shaBegin = result.indexOf('SHA1":"') + 7
-    def shaEnd = result.indexOf('"', shaBegin)
-    println(result.substring(shaBegin, shaEnd))
-    return ["COMMIT_ID": result.substring(shaBegin, shaEnd)]
-}
 pipeline{
   agent any 
 
@@ -37,6 +18,11 @@ pipeline{
    }
    stages{
       stage ("echo Git Tag") {
+        steps {
+          script {
+             def lastSuccessBuildName = Jenkins.instance.getItem(env.JOB_NAME).lastSuccessfulBuild.displayName
+             echo "Last Success Build Name: ${lastSuccessBuildName}"
+          }
         steps {
           echo "${params.COMMIT_ID}"
         }
