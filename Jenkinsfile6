@@ -1,21 +1,5 @@
 pipeline{
   agent any 
-
-  parameters {
-    gitParameter(
-      branch: '',
-      branchFilter: ".*",
-      defaultValue: "",
-      description: '',
-      listSize: '10',
-      name: 'COMMIT_ID',
-      quickFilterEnabled: false,
-      selectedValue: 'NONE',
-      sortMode: 'ASCENDING_SMART',
-      tagFilter: "*",
-      type: 'master',
-      useRepository: 'git@github.com/lakhanyawa/ansible-basics')
-   }
    stages{
       stage ("echo Git Tag") {
         steps {
@@ -23,9 +7,6 @@ pipeline{
              def lastSuccessBuildName = Jenkins.instance.getItem(env.JOB_NAME).lastSuccessfulBuild.displayName
              echo "Last Success Build Name: ${lastSuccessBuildName}"
           }
-        steps {
-          echo "${params.COMMIT_ID}"
-        }
      }
   } 
 }
