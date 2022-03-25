@@ -1,0 +1,13 @@
+---
+- name: take backup of current message-bus.rules file
+  copy:
+    src: "{{ message-bus }}"
+    dest: "{{ message-bus }}/message-bus.rules.bkp"
+    remote_src: yes
+- name: copy message-bus template
+  template: 
+    src: message-bus.rules.j2
+    dest: "{{ rulesdir }}"
+    owner: "{{ netcool_user }}"
+    group: "{{ netcool_user }}"
+  notify: restart netcool service

@@ -1,0 +1,4 @@
+---
+- name: restart netcool service
+  become: true
+  service: name=netcool state=restarted
